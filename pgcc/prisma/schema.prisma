@@ -51,6 +51,7 @@ model User {
   organizationId String?       @unique // for ORG_LEADER: one login per org
   organization   Organization? @relation(fields: [organizationId], references: [id])
   active         Boolean       @default(true)
+  mustChangePassword Boolean @default(false)
   createdAt      DateTime      @default(now())
 }
 
@@ -161,4 +162,31 @@ model AuditLog {
   createdAt DateTime @default(now())
 
   @@index([entity, entityId])
+}
+
+enum RequestStatus {
+  PENDING
+  APPROVED
+  REJECTED
+  DONE
+}
+
+// Public "register interest" submissions, vetted by admins
+model Application {
+  id         String        @id @default(cuid())
+  email      String
+  payload    Json
+  status     RequestStatus @default(PENDING)
+  createdAt  DateTime      @default(now())
+  reviewedBy String?
+  reviewedAt DateTime?
+}
+
+// "Forgot password" requests, handled by admins
+model ResetRequest {
+  id         String        @id @default(cuid())
+  identifier String
+  userId     String?
+  status     RequestStatus @default(PENDING)
+  createdAt  DateTime      @default(now())
 }

@@ -10,7 +10,7 @@ export async function changePassword(_: unknown, fd: FormData) {
   if (next !== again) return { error: "The two new passwords do not match." };
   const user = await prisma.user.findUniqueOrThrow({ where: { id: u.id } });
   if (!(await bcrypt.compare(cur, user.passwordHash))) return { error: "Current password is incorrect." };
-  await prisma.user.update({ where: { id: u.id }, data: { passwordHash: await bcrypt.hash(next, 10) } });
+  await prisma.user.update({ where: { id: u.id }, data: { passwordHash: await bcrypt.hash(next, 10), mustChangePassword: false } });
   await prisma.auditLog.create({ data: { userId: u.id, action: "PASSWORD_CHANGED", entity: "User", entityId: u.id } });
   return { ok: "Password changed." };
 }

@@ -1,28 +1,129 @@
 @import "tailwindcss";
 
 :root {
-  --brand: #0a5c36; --brand-dark: #063d24; --gold: #e9b422;
-  --ink: #10231a; --muted: #5a6b62; --line: #dbe3de; --paper: #f5f7f6;
+  --brand: #0a5c36;
+  --brand-dark: #063d24;
+  --gold: #e9b422;
+  --ink: #10231a;
+  --muted: #5a6b62;
+  --line: #dbe3de;
+  --paper: #f5f7f6;
   color-scheme: light;
 }
-html { scroll-behavior: smooth; }
-body { background: var(--paper); color: var(--ink); font-family: var(--font-body), system-ui, sans-serif; }
-h1, h2, h3 { font-family: var(--font-display), system-ui, sans-serif; letter-spacing: -0.02em; }
-@media (prefers-reduced-motion: reduce) { html { scroll-behavior: auto; } }
+
+html {
+  scroll-behavior: smooth;
+  scroll-padding-top: 5rem;
+}
+
+body {
+  min-width: 320px;
+  background: var(--paper);
+  color: var(--ink);
+  font-family: var(--font-body), system-ui, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+
+h1, h2, h3 {
+  font-family: var(--font-display), system-ui, sans-serif;
+  letter-spacing: -0.025em;
+}
+
+::selection {
+  background: color-mix(in srgb, var(--gold) 45%, white);
+  color: var(--ink);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html { scroll-behavior: auto; }
+  *, *::before, *::after { scroll-behavior: auto !important; }
+}
 
 @layer base {
   input, select, textarea {
-    background: #fff; color: var(--ink); border: 1px solid #b9c6be; border-radius: 0.5rem;
-    padding: 0.6rem 0.75rem; font-size: 0.95rem; min-height: 2.75rem;
+    min-height: 2.75rem;
+    border: 1px solid #b9c6be;
+    border-radius: 0.625rem;
+    background: #fff;
+    color: var(--ink);
+    padding: 0.65rem 0.8rem;
+    font-size: 0.95rem;
+    transition: border-color 150ms ease, box-shadow 150ms ease;
   }
   input::placeholder { color: #7b8a82; }
   select { appearance: auto; cursor: pointer; }
   option { background: #fff; color: var(--ink); }
   input:focus-visible, select:focus-visible, textarea:focus-visible, button:focus-visible, a:focus-visible {
-    outline: 3px solid var(--gold); outline-offset: 2px;
+    outline: 3px solid var(--gold);
+    outline-offset: 2px;
   }
-  button { cursor: pointer; min-height: 2.5rem; }
+  input:focus, select:focus, textarea:focus {
+    border-color: var(--brand);
+    box-shadow: 0 0 0 3px color-mix(in srgb, var(--brand) 14%, transparent);
+  }
+  button {
+    min-height: 2.5rem;
+    cursor: pointer;
+    transition: background-color 150ms ease, border-color 150ms ease, color 150ms ease, transform 150ms ease;
+  }
+  button:active:not(:disabled) {
+    transform: translateY(1px);
+  }
+  button:disabled {
+    cursor: wait;
+    opacity: 0.7;
+  }
   table { background: #fff; }
-  th { font-weight: 600; color: var(--muted); }
-  td, th { padding: 0.6rem 0.75rem; }
+  th {
+    color: var(--muted);
+    font-weight: 600;
+    white-space: nowrap;
+  }
+  td, th { padding: 0.75rem; }
+  tbody tr + tr { border-top: 1px solid var(--line); }
+}
+
+@layer components {
+  .home-hero {
+    background:
+      radial-gradient(ellipse at 82% 18%, rgb(233 180 34 / 16%), transparent 34%),
+      linear-gradient(135deg, #063d24 0%, #0a5c36 62%, #08452b 100%);
+  }
+
+  .auth-background {
+    background:
+      radial-gradient(ellipse at 15% 15%, rgb(233 180 34 / 12%), transparent 34%),
+      linear-gradient(145deg, #f8faf8, #edf3ef);
+  }
+
+  .table-scroll {
+    max-width: 100%;
+    overflow-x: auto;
+    border: 1px solid var(--line);
+    border-radius: 0.875rem;
+    background: #fff;
+    box-shadow: 0 1px 2px rgb(16 35 26 / 4%);
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .table-scroll table {
+    min-width: 42rem;
+  }
+
+  .table-scroll a {
+    color: var(--brand);
+    font-weight: 600;
+    text-decoration: underline;
+    text-underline-offset: 3px;
+  }
+
+  .table-scroll tbody tr:hover {
+    background: #f7faf8;
+  }
+
+  .page-heading {
+    font-size: clamp(1.75rem, 3vw, 2.25rem);
+    line-height: 1.12;
+  }
 }

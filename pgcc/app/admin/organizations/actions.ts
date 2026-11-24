@@ -60,7 +60,7 @@ export async function createOrganization(_: unknown, fd: FormData) {
       });
       await tx.user.create({
         data: {
-          name: d.chairmanName, phone: d.chairmanPhone, role: "ORG_LEADER",
+          name: d.chairmanName, phone: d.chairmanPhone, role: "ORG_LEADER", mustChangePassword: true,
           organizationId: o.id, passwordHash: await bcrypt.hash(tempPassword, 10),
         },
       });
