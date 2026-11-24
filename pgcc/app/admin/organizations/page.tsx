@@ -22,7 +22,9 @@ export default async function Organizations({ searchParams }: { searchParams: Pr
     <main className="p-6 max-w-6xl mx-auto">
       <div className="flex justify-between mb-4">
         <h1 className="text-2xl font-semibold">Organisations</h1>
-        <Link href="/admin/organizations/new" className="rounded bg-green-700 px-4 py-2 text-white">New organisation</Link>
+        {me.role !== "LGA_COORDINATOR" && (
+          <Link href="/admin/organizations/new" className="rounded bg-green-700 px-4 py-2 text-white">New organisation</Link>
+        )}
       </div>
       <form className="flex gap-2 mb-4">
         <input name="q" defaultValue={q} placeholder="Search name or reg no." className="border rounded px-3 py-2 flex-1" />
