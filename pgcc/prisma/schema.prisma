@@ -1,0 +1,164 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL") // needed for Neon/Supabase migrations
+}
+
+enum Role {
+  SUPER_ADMIN
+  STATE_ADMIN
+  LGA_COORDINATOR
+  ORG_LEADER
+}
+
+enum Level {
+  NATIONAL
+  STATE
+  LGA
+  WARD
+}
+
+enum VerificationStatus {
+  PENDING
+  VERIFIED
+  INCOMPLETE
+}
+
+enum ChangeStatus {
+  PENDING
+  APPROVED
+  REJECTED
+}
+
+enum FlagStatus {
+  OPEN
+  CLEARED   // admin confirmed member may belong to both groups
+  RESOLVED  // member removed from one group
+}
+
+model User {
+  id             String        @id @default(cuid())
+  email          String?       @unique
+  phone          String?       @unique
+  passwordHash   String
+  name           String
+  role           Role
+  lgaId          String? // for LGA_COORDINATOR scoping
+  organizationId String?       @unique // for ORG_LEADER: one login per org
+  organization   Organization? @relation(fields: [organizationId], references: [id])
+  active         Boolean       @default(true)
+  createdAt      DateTime      @default(now())
+}
+
+model Organization {
+  id             String             @id @default(cuid())
+  regSeq         Int                @unique @default(autoincrement())
+  regNo          String             @unique // PGCC/KN/2027/00001, set on create
+  name           String
+  dateEstablished DateTime?
+  level          Level
+  address        String
+  lga            String
+  state          String             @default("Kano")
+  status         VerificationStatus @default(PENDING)
+  remarks        String?
+  logoUrl        String?
+  verifiedAt     DateTime?
+  deletedAt      DateTime? // soft delete
+  createdAt      DateTime           @default(now())
+  updatedAt      DateTime           @updatedAt
+
+  officers       Officer[]
+  members        Member[]
+  documents      Document[]
+  changeRequests ChangeRequest[]
+  user           User?
+
+  @@index([lga])
+  @@index([status])
+}
+
+// Chairman, Secretary, PRO, Women Leader (Section B of the form)
+model Officer {
+  id             String       @id @default(cuid())
+  organizationId String
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  title          String // CHAIRMAN | SECRETARY | PRO | WOMEN_LEADER
+  name           String
+  phone          String
+  photoUrl       String?
+
+  @@unique([organizationId, title])
+}
+
+model Member {
+  id             String       @id @default(cuid())
+  organizationId String
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  name           String
+  phone          String // normalised to +234XXXXXXXXXX
+  ward           String
+  pollingUnit    String
+  position       String       @default("Member")
+  photoUrl       String?
+  consentGiven   Boolean      @default(false) // NDPA 2023
+  deletedAt      DateTime?
+  createdAt      DateTime     @default(now())
+
+  flags DuplicateFlag[]
+
+  @@unique([organizationId, phone]) // no repeats inside one group
+  @@index([phone]) // fast cross-group lookup
+  @@index([pollingUnit, name])
+}
+
+model DuplicateFlag {
+  id        String     @id @default(cuid())
+  memberId  String
+  member    Member     @relation(fields: [memberId], references: [id], onDelete: Cascade)
+  otherMemberId String // the matching record in another group
+  reason    String // SAME_PHONE | SAME_NAME_PU
+  status    FlagStatus @default(OPEN)
+  createdAt DateTime   @default(now())
+
+  @@index([status])
+}
+
+model Document {
+  id             String       @id @default(cuid())
+  organizationId String
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  type           String // CAC | STATE_REG | LGA_REG | OTHER
+  url            String
+  uploadedAt     DateTime     @default(now())
+}
+
+// Orgs cannot edit their profile directly: they submit a request,
+// the live record changes only after an admin approves.
+model ChangeRequest {
+  id             String       @id @default(cuid())
+  organizationId String
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  payload        Json // proposed field changes
+  status         ChangeStatus @default(PENDING)
+  reviewedBy     String?
+  reviewNote     String?
+  createdAt      DateTime     @default(now())
+  reviewedAt     DateTime?
+}
+
+model AuditLog {
+  id        String   @id @default(cuid())
+  userId    String?
+  action    String // e.g. ORG_CREATED, MEMBER_REMOVED, CHANGE_APPROVED
+  entity    String
+  entityId  String
+  meta      Json?
+  createdAt DateTime @default(now())
+
+  @@index([entity, entityId])
+}
