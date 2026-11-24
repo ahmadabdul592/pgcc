@@ -1,26 +1,28 @@
 @import "tailwindcss";
 
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  --brand: #0a5c36; --brand-dark: #063d24; --gold: #e9b422;
+  --ink: #10231a; --muted: #5a6b62; --line: #dbe3de; --paper: #f5f7f6;
+  color-scheme: light;
 }
+html { scroll-behavior: smooth; }
+body { background: var(--paper); color: var(--ink); font-family: var(--font-body), system-ui, sans-serif; }
+h1, h2, h3 { font-family: var(--font-display), system-ui, sans-serif; letter-spacing: -0.02em; }
+@media (prefers-reduced-motion: reduce) { html { scroll-behavior: auto; } }
 
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
-}
-
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
+@layer base {
+  input, select, textarea {
+    background: #fff; color: var(--ink); border: 1px solid #b9c6be; border-radius: 0.5rem;
+    padding: 0.6rem 0.75rem; font-size: 0.95rem; min-height: 2.75rem;
   }
-}
-
-body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  input::placeholder { color: #7b8a82; }
+  select { appearance: auto; cursor: pointer; }
+  option { background: #fff; color: var(--ink); }
+  input:focus-visible, select:focus-visible, textarea:focus-visible, button:focus-visible, a:focus-visible {
+    outline: 3px solid var(--gold); outline-offset: 2px;
+  }
+  button { cursor: pointer; min-height: 2.5rem; }
+  table { background: #fff; }
+  th { font-weight: 600; color: var(--muted); }
+  td, th { padding: 0.6rem 0.75rem; }
 }

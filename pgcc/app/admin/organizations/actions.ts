@@ -6,7 +6,7 @@ import { revalidatePath } from "next/cache";
 import { prisma } from "@/lib/prisma";
 import { requireRole } from "@/lib/auth";
 import { normalizePhone } from "@/lib/duplicates";
-import { formatRegNo } from "@/lib/orgs";
+import { formatRegNo, regNoToSlug } from "@/lib/orgs";
 
 const phone = z.string().transform((v, ctx) => {
   const p = normalizePhone(v);
@@ -68,10 +68,10 @@ export async function createOrganization(_: unknown, fd: FormData) {
       return regNo;
     });
     revalidatePath("/admin/organizations");
-    return { ok: true as const, regNo, loginPhone: d.chairmanPhone, tempPassword }; // show ONCE
+    return { ok: true as const, regNo, slug: regNoToSlug(regNo), loginPhone: d.chairmanPhone, tempPassword }; // show ONCE
   } catch (e: any) {
     if (e.code === "P2002") return { error: { chairmanPhone: ["This phone already has a login"] } };
-    throw e;
+    return { error: { name: ["Something went wrong. Please check the details and try again."] } };
   }
 }
 
