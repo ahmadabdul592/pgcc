@@ -1,6 +1,7 @@
 import NextAuth, { CredentialsSignin } from "next-auth";
 import Credentials from "next-auth/providers/credentials";
 import bcrypt from "bcryptjs";
+import { redirect } from "next/navigation";
 import { prisma } from "./prisma";
 import { normalizePhone } from "./duplicates";
 import { allow } from "./ratelimit";
@@ -53,6 +54,7 @@ export type Role = "SUPER_ADMIN" | "STATE_ADMIN" | "LGA_COORDINATOR" | "ORG_LEAD
 export async function requireRole(allowed: Role[]) {
   const session = await auth();
   const u = session?.user as any;
-  if (!u || !allowed.includes(u.role)) throw new Error("FORBIDDEN");
+  if (!u) redirect("/login");
+  if (!allowed.includes(u.role)) redirect(u.role === "ORG_LEADER" ? "/portal" : "/admin");
   return u as { id: string; role: Role; organizationId?: string; lgaId?: string };
 }
