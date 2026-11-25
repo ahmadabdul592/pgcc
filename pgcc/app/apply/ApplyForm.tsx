@@ -1,6 +1,7 @@
 "use client";
 import { useActionState } from "react";
 import { submitApplication } from "./actions";
+import { KANO_LGAS } from "@/lib/kano-lgas";
 
 const officers = [["chairman", "Chairman"], ["secretary", "Secretary"], ["pro", "P.R.O"], ["womenLeader", "Women Leader"]];
 
@@ -20,7 +21,7 @@ export default function ApplyForm() {
       </div>
       <div><label className="text-sm font-medium">Address</label><input name="address" className="mt-1 w-full" required />{err("address")}</div>
       <div className="grid gap-3 sm:grid-cols-2">
-        <div><label className="text-sm font-medium">L.G.A</label><input name="lga" className="mt-1 w-full" required /></div>
+        <div><label className="text-sm font-medium">L.G.A</label><select name="lga" className="mt-1 w-full" required defaultValue=""><option value="" disabled>Select local government</option>{KANO_LGAS.map((lga) => <option key={lga} value={lga}>{lga}</option>)}</select>{err("lga")}</div>
         <div><label className="text-sm font-medium">State</label><input name="state" defaultValue="Kano" className="mt-1 w-full" /></div>
       </div>
       {officers.map(([k, l]) => (

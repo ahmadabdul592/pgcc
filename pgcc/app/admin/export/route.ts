@@ -13,7 +13,7 @@ const csv = (rows: unknown[][]) => "\uFEFF" + rows.map((r) => r.map(cell).join("
 export async function GET(req: Request) {
   const u = (await auth())?.user as any;
   if (!u || !["SUPER_ADMIN", "STATE_ADMIN", "LGA_COORDINATOR"].includes(u.role)) return new Response("Forbidden", { status: 403 });
-  const scope = u.role === "LGA_COORDINATOR" ? { lga: u.lgaId } : {};
+  const scope = u.role === "LGA_COORDINATOR" ? { lga: u.lgaId ?? "" } : {};
   const slug = new URL(req.url).searchParams.get("org");
   let body: string, name: string;
   if (slug) {

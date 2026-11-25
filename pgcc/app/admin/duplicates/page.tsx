@@ -3,8 +3,9 @@ import { listOpenFlags } from "@/lib/duplicates";
 import { clearFlag, resolveFlag } from "./actions";
 
 export default async function Duplicates() {
-  await requireRole(["SUPER_ADMIN", "STATE_ADMIN"]);
-  const rows = await listOpenFlags();
+  const me = await requireRole(["SUPER_ADMIN", "STATE_ADMIN", "LGA_COORDINATOR"]);
+  const lga = me.role === "LGA_COORDINATOR" ? me.lgaId ?? "" : undefined;
+  const rows = await listOpenFlags(lga);
   return (
     <main className="mx-auto max-w-5xl p-6">
       <h1 className="mb-4 text-2xl font-semibold">Duplicate members ({rows.length} open)</h1>

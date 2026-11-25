@@ -5,10 +5,27 @@ import ActionButton from "@/app/components/ActionButton";
 import { approveApplication, rejectApplication, issueResetPassword, dismissReset } from "./actions";
 
 export default async function Requests() {
-  await requireRole(["SUPER_ADMIN", "STATE_ADMIN"]);
+  const me = await requireRole(["SUPER_ADMIN", "STATE_ADMIN", "LGA_COORDINATOR"]);
+  const lgaId = me.role === "LGA_COORDINATOR" ? me.lgaId ?? "" : undefined;
+  const coordinatorUsers = lgaId === undefined ? null : await prisma.user.findMany({
+    where: { role: "ORG_LEADER", organization: { lga: lgaId } },
+    select: { id: true },
+  });
   const [apps, resets] = await Promise.all([
-    prisma.application.findMany({ where: { status: "PENDING" }, orderBy: { createdAt: "asc" } }),
-    prisma.resetRequest.findMany({ where: { status: "PENDING" }, orderBy: { createdAt: "asc" } }),
+    prisma.application.findMany({
+      where: {
+        status: "PENDING",
+        ...(lgaId === undefined ? {} : { payload: { path: ["lga"], equals: lgaId } }),
+      },
+      orderBy: { createdAt: "asc" },
+    }),
+    prisma.resetRequest.findMany({
+      where: {
+        status: "PENDING",
+        ...(coordinatorUsers === null ? {} : { userId: { in: coordinatorUsers.map((u) => u.id) } }),
+      },
+      orderBy: { createdAt: "asc" },
+    }),
   ]);
   const users = await prisma.user.findMany({ where: { id: { in: resets.map((r) => r.userId).filter(Boolean) as string[] } }, select: { id: true, name: true, role: true } });
   const byId = new Map(users.map((u) => [u.id, u]));
@@ -33,6 +50,6 @@ export default async function Requests() {
             <div className="flex gap-2">
               <ActionButton label="Issue temporary password" run={issueResetPassword.bind(null, r.id)} />
               <ActionButton label="Dismiss" danger run={dismissReset.bind(null, r.id)} /></div></div>); })}</div></section>
-      <ChangeRequests />
+      <ChangeRequests lgaId={lgaId} />
     </main>);
 }

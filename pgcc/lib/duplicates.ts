@@ -103,17 +103,30 @@ export async function importMembers(orgId: string, rows: MemberInput[]) {
   return report;
 }
 
-/** Admin view: all open duplicate flags with both sides. */
-export async function listOpenFlags() {
+/** Returns open flags; LGA coordinators only see flags where both members are local. */
+export async function listOpenFlags(lga?: string) {
+  const scoped = lga !== undefined;
   const flags = await prisma.duplicateFlag.findMany({
-    where: { status: "OPEN" },
+    where: {
+      status: "OPEN",
+      member: {
+        deletedAt: null,
+        organization: { deletedAt: null, ...(scoped ? { lga } : {}) },
+      },
+    },
     include: { member: { include: { organization: { select: { name: true, regNo: true } } } } },
     orderBy: { createdAt: "desc" },
   });
   const others = await prisma.member.findMany({
-    where: { id: { in: flags.map((f) => f.otherMemberId) } },
+    where: {
+      id: { in: flags.map((f) => f.otherMemberId) },
+      deletedAt: null,
+      organization: { deletedAt: null, ...(scoped ? { lga } : {}) },
+    },
     include: { organization: { select: { name: true, regNo: true } } },
   });
   const byId = new Map(others.map((o) => [o.id, o]));
-  return flags.map((f) => ({ flag: f, other: byId.get(f.otherMemberId) }));
+  return flags
+    .filter((f) => !scoped || byId.has(f.otherMemberId))
+    .map((f) => ({ flag: f, other: byId.get(f.otherMemberId) }));
 }

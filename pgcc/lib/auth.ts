@@ -1,9 +1,11 @@
-import NextAuth from "next-auth";
+import NextAuth, { CredentialsSignin } from "next-auth";
 import Credentials from "next-auth/providers/credentials";
 import bcrypt from "bcryptjs";
 import { prisma } from "./prisma";
 import { normalizePhone } from "./duplicates";
 import { allow } from "./ratelimit";
+
+class RateLimited extends CredentialsSignin { code = "rate_limited"; }
 
 // Login with email (admins) or phone (org leaders) + password.
 export const { handlers, auth, signIn, signOut } = NextAuth({
@@ -16,12 +18,15 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
         const id = String(c?.identifier ?? "").trim();
         const pw = String(c?.password ?? "");
         const rlKey = `login:${id.toLowerCase()}`;
-        if (!(await allow(rlKey, 8, 900))) return null; // 8 tries per 15 min
+        if (!(await allow(rlKey, 8, 900))) throw new RateLimited(); // 8 tries per 15 min
         const phone = normalizePhone(id);
         const user = await prisma.user.findFirst({
           where: { active: true, OR: [{ email: id.toLowerCase() }, ...(phone ? [{ phone }] : [])] },
         });
-        if (!user || !(await bcrypt.compare(pw, user.passwordHash))) return null;
+        if (!user) return null;
+        // also accept a copied password with stray spaces/line breaks around it
+        const okPw = (await bcrypt.compare(pw, user.passwordHash)) || (pw.trim() !== pw && (await bcrypt.compare(pw.trim(), user.passwordHash)));
+        if (!okPw) return null;
         await prisma.rateLimit.deleteMany({ where: { key: rlKey } });
         return {
           id: user.id, name: user.name, role: user.role,

@@ -1,10 +1,16 @@
 import Link from "next/link";
 import { prisma } from "@/lib/prisma";
 import { requireRole } from "@/lib/auth";
+import { listOpenFlags } from "@/lib/duplicates";
 
 export default async function Dashboard() {
   const me = await requireRole(["SUPER_ADMIN", "STATE_ADMIN", "LGA_COORDINATOR"]);
-  const scope = me.role === "LGA_COORDINATOR" ? { lga: me.lgaId } : {};
+  const scope = me.role === "LGA_COORDINATOR" ? { lga: me.lgaId ?? "" } : {};
+  const lgaId = me.role === "LGA_COORDINATOR" ? me.lgaId ?? "" : undefined;
+  const coordinatorUsers = lgaId === undefined ? null : await prisma.user.findMany({
+    where: { role: "ORG_LEADER", organization: { lga: lgaId } },
+    select: { id: true },
+  });
   const live = { deletedAt: null, ...scope };
   const [total, verified, pending, incomplete, members, byLga, apps, changes, resets, flags] = await Promise.all([
     prisma.organization.count({ where: live }),
@@ -13,10 +19,27 @@ export default async function Dashboard() {
     prisma.organization.count({ where: { ...live, status: "INCOMPLETE" } }),
     prisma.member.count({ where: { deletedAt: null, organization: live } }),
     prisma.organization.groupBy({ by: ["lga"], where: live, _count: { _all: true }, orderBy: { _count: { lga: "desc" } }, take: 15 }),
-    prisma.application.count({ where: { status: "PENDING" } }),
-    prisma.changeRequest.count({ where: { status: "PENDING" } }),
-    prisma.resetRequest.count({ where: { status: "PENDING" } }),
-    prisma.duplicateFlag.count({ where: { status: "OPEN" } }),
+    prisma.application.count({
+      where: {
+        status: "PENDING",
+        ...(lgaId === undefined ? {} : { payload: { path: ["lga"], equals: lgaId } }),
+      },
+    }),
+    prisma.changeRequest.count({
+      where: {
+        status: "PENDING",
+        ...(lgaId === undefined ? {} : { organization: { lga: lgaId } }),
+      },
+    }),
+    prisma.resetRequest.count({
+      where: {
+        status: "PENDING",
+        ...(coordinatorUsers === null ? {} : { userId: { in: coordinatorUsers.map((u) => u.id) } }),
+      },
+    }),
+    lgaId === undefined
+      ? prisma.duplicateFlag.count({ where: { status: "OPEN" } })
+      : listOpenFlags(lgaId).then((flags) => flags.length),
   ]);
   const max = Math.max(1, ...byLga.map((l) => l._count._all));
   const stat = [["Groups", total], ["Verified", verified], ["Pending", pending], ["Incomplete", incomplete], ["Members", members]];

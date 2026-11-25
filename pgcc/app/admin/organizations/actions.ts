@@ -7,6 +7,7 @@ import { prisma } from "@/lib/prisma";
 import { requireRole } from "@/lib/auth";
 import { normalizePhone } from "@/lib/duplicates";
 import { formatRegNo, regNoToSlug } from "@/lib/orgs";
+import { KANO_LGAS } from "@/lib/kano-lgas";
 
 const phone = z.string().transform((v, ctx) => {
   const p = normalizePhone(v);
@@ -19,7 +20,7 @@ const orgSchema = z.object({
   dateEstablished: z.string().optional(),
   level: z.enum(["NATIONAL", "STATE", "LGA", "WARD"]),
   address: z.string().min(5),
-  lga: z.string().min(2),
+  lga: z.enum(KANO_LGAS),
   state: z.string().default("Kano"),
   chairmanName: z.string().min(2), chairmanPhone: phone,
   secretaryName: z.string().min(2), secretaryPhone: phone,

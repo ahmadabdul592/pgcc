@@ -9,7 +9,7 @@ export default async function Organizations({ searchParams }: { searchParams: Pr
   const orgs = await prisma.organization.findMany({
     where: {
       deletedAt: null,
-      ...(me.role === "LGA_COORDINATOR" ? { lga: me.lgaId } : lga ? { lga } : {}),
+      ...(me.role === "LGA_COORDINATOR" ? { lga: me.lgaId ?? "" } : lga ? { lga } : {}),
       ...(status ? { status: status as any } : {}),
       ...(q ? { OR: [{ name: { contains: q, mode: "insensitive" } }, { regNo: { contains: q, mode: "insensitive" } }] } : {}),
     },

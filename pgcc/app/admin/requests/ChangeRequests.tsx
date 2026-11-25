@@ -5,11 +5,20 @@ import { approveChange, rejectChange } from "./change-actions";
 
 const when = (d: Date) => d.toLocaleString("en-GB", { dateStyle: "medium", timeStyle: "short" });
 
-export default async function ChangeRequests() {
+export default async function ChangeRequests({ lgaId }: { lgaId?: string }) {
   const inc = { organization: { select: { name: true, regNo: true } } };
   const [list, done] = await Promise.all([
-    prisma.changeRequest.findMany({ where: { status: "PENDING" }, orderBy: { createdAt: "asc" }, include: inc }),
-    prisma.changeRequest.findMany({ where: { status: { not: "PENDING" } }, orderBy: { reviewedAt: "desc" }, take: 15, include: inc }),
+    prisma.changeRequest.findMany({
+      where: { status: "PENDING", ...(lgaId === undefined ? {} : { organization: { lga: lgaId } }) },
+      orderBy: { createdAt: "asc" },
+      include: inc,
+    }),
+    prisma.changeRequest.findMany({
+      where: { status: { not: "PENDING" }, ...(lgaId === undefined ? {} : { organization: { lga: lgaId } }) },
+      orderBy: { reviewedAt: "desc" },
+      take: 15,
+      include: inc,
+    }),
   ]);
   const curs = new Map<string, Record<string, string>>();
   for (const id of new Set(list.map((r) => r.organizationId))) curs.set(id, await currentValues(id));

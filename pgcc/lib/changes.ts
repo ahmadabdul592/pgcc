@@ -1,7 +1,7 @@
 import { prisma } from "./prisma";
 
 const KEY: Record<string, string> = { CHAIRMAN: "chairman", SECRETARY: "secretary", PRO: "pro", WOMEN_LEADER: "womenLeader" };
-export const label = (k: string) => k.replace(/([A-Z])/g, " $1").replace(/^./, (c) => c.toUpperCase());
+export { label } from "./change-label";
 
 /** Flat view of the fields an organisation may ask to change. */
 export async function currentValues(orgId: string): Promise<Record<string, string>> {

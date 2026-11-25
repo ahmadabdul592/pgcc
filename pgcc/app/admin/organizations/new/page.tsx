@@ -1,6 +1,7 @@
 "use client";
 import { useActionState } from "react";
 import { createOrganization } from "../actions";
+import { KANO_LGAS } from "@/lib/kano-lgas";
 
 const inp = "border rounded px-3 py-2 w-full";
 const officers = [["chairman", "Chairman"], ["secretary", "Secretary"], ["pro", "P.R.O"], ["womenLeader", "Women Leader"]];
@@ -16,7 +17,7 @@ export default function NewOrg() {
         <p>Temporary password: <b>{s.tempPassword}</b></p>
         <p className="text-sm text-red-600">Copy this now. It will not be shown again.</p>
       </div>
-      <div className="mt-5 flex flex-wrap gap-3"><a href={`/admin/organizations/${s.slug}`} className="rounded-lg bg-[var(--brand)] px-5 py-2.5 font-semibold text-white">View organisation</a><a href="/admin/organizations/new" className="rounded-lg border px-5 py-2.5">Add another</a><a href="/admin/organizations" className="rounded-lg border px-5 py-2.5">Back to list</a></div>
+      <div className="mt-5 flex flex-wrap gap-3"><a href={`/admin/organizations/${s.slug}`} className="rounded-lg bg-(--brand) px-5 py-2.5 font-semibold text-white">View organisation</a><a href="/admin/organizations/new" className="rounded-lg border px-5 py-2.5">Add another</a><a href="/admin/organizations" className="rounded-lg border px-5 py-2.5">Back to list</a></div>
     </main>);
   return (
     <main className="mx-auto max-w-2xl space-y-3 p-5 md:p-8">
@@ -29,7 +30,7 @@ export default function NewOrg() {
         </div>
         <input name="address" placeholder="Address" className={inp} required />{err("address")}
         <div className="grid grid-cols-2 gap-3">
-          <input name="lga" placeholder="L.G.A" className={inp} required /><input name="state" defaultValue="Kano" className={inp} />
+          <select name="lga" className={inp} required defaultValue=""><option value="" disabled>Select local government</option>{KANO_LGAS.map((lga) => <option key={lga} value={lga}>{lga}</option>)}</select><input name="state" defaultValue="Kano" className={inp} />
         </div>
         {officers.map(([k, label]) => (
           <div key={k} className="grid grid-cols-2 gap-3">

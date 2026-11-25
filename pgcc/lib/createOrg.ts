@@ -4,6 +4,7 @@ import { randomBytes, randomUUID } from "crypto";
 import { prisma } from "./prisma";
 import { normalizePhone } from "./duplicates";
 import { formatRegNo, regNoToSlug } from "./orgs";
+import { KANO_LGAS } from "./kano-lgas";
 
 const phone = z.string().transform((v, ctx) => {
   const p = normalizePhone(v);
@@ -15,7 +16,7 @@ const nm = z.string().min(2);
 export const orgSchema = z.object({
   name: z.string().min(3), dateEstablished: z.string().optional(),
   level: z.enum(["NATIONAL", "STATE", "LGA", "WARD"]),
-  address: z.string().min(5), lga: z.string().min(2), state: z.string().default("Kano"),
+  address: z.string().min(5), lga: z.enum(KANO_LGAS), state: z.string().default("Kano"),
   chairmanName: nm, chairmanPhone: phone, secretaryName: nm, secretaryPhone: phone,
   proName: nm, proPhone: phone, womenLeaderName: nm, womenLeaderPhone: phone,
 });
