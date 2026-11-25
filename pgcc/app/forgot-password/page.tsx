@@ -1,5 +1,7 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
+import { headers } from "next/headers";
+import { allow } from "@/lib/ratelimit";
 import { prisma } from "@/lib/prisma";
 import { normalizePhone } from "@/lib/duplicates";
 
@@ -7,6 +9,8 @@ export default async function Forgot({ searchParams }: { searchParams: Promise<{
   const { sent } = await searchParams;
   async function submit(fd: FormData) {
     "use server";
+    const ip = ((await headers()).get("x-forwarded-for") ?? "unknown").split(",")[0].trim();
+    if (!(await allow(`forgot:${ip}`, 5, 3600))) redirect("/forgot-password?sent=1");
     const id = String(fd.get("identifier") ?? "").trim().slice(0, 100);
     const phone = normalizePhone(id);
     const user = id ? await prisma.user.findFirst({ where: { active: true, role: { not: "SUPER_ADMIN" }, OR: [{ email: id.toLowerCase() }, ...(phone ? [{ phone }] : [])] } }) : null;

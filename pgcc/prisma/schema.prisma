@@ -190,3 +190,10 @@ model ResetRequest {
   status     RequestStatus @default(PENDING)
   createdAt  DateTime      @default(now())
 }
+
+// Simple fixed-window rate limiter (login, public forms)
+model RateLimit {
+  key     String   @id
+  count   Int
+  resetAt DateTime
+}

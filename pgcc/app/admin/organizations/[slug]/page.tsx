@@ -1,3 +1,5 @@
+import ActionButton from "@/app/components/ActionButton";
+import { removeMember } from "../member-actions";
 import MemberPhoto from "@/app/components/MemberPhoto";
 import { prisma } from "@/lib/prisma";
 import { requireRole } from "@/lib/auth";
@@ -17,24 +19,22 @@ export default async function Detail({ params }: { params: Promise<{ slug: strin
   const archive = async () => { "use server"; await archiveOrganization(o.id, !!o.deletedAt); };
 
   return (
-    <main className="mx-auto max-w-5xl space-y-6 p-4 sm:p-6">
+    <main className="mx-auto max-w-5xl space-y-6 p-6">
       <div>
         <p className="text-sm text-gray-500">{o.regNo}</p>
-        <h1 className="page-heading font-bold">{o.name} {o.deletedAt && <span className="text-red-600">(archived)</span>}</h1>
+        <h1 className="text-2xl font-semibold">{o.name} {o.deletedAt && <span className="text-red-600">(archived)</span>}</h1>
         <p className="text-gray-600">{o.level} · {o.address}, {o.lga}, {o.state} · Status: <b>{o.status}</b></p>
       </div>
       <div className="flex flex-wrap gap-2">
         <form action={st("VERIFIED")}><button className="rounded bg-green-700 px-3 py-1 text-white">Verify</button></form>
         <form action={st("INCOMPLETE")}><button className="rounded border px-3 py-1">Mark incomplete</button></form>
         <form action={st("PENDING")}><button className="rounded border px-3 py-1">Mark pending</button></form>
-        {me.role !== "LGA_COORDINATOR" && <form action={archive}><button className="rounded border border-red-600 px-3 py-1 text-red-600">{o.deletedAt ? "Restore" : "Archive"}</button></form>}
+        {me.role !== "LGA_COORDINATOR" && <a href={`/admin/organizations/${slug}/edit`} className="rounded bg-green-700 px-3 py-1 text-white">Edit details</a>}<a href={`/certificate/${slug}`} className="rounded border px-3 py-1">Certificate</a><a href={`/admin/export?org=${slug}`} className="rounded border px-3 py-1">Export members CSV</a>{me.role !== "LGA_COORDINATOR" && <form action={archive}><button className="rounded border border-red-600 px-3 py-1 text-red-600">{o.deletedAt ? "Restore" : "Archive"}</button></form>}
       </div>
       <section><h2 className="mb-2 font-semibold">Officers</h2>
         <ul className="text-sm">{o.officers.map((x) => <li key={x.id}>{x.title}: {x.name} ({x.phone})</li>)}</ul></section>
-      <section><h2 className="mb-3 text-lg font-bold">Members ({o.members.length})</h2>
-        <div className="table-scroll">
-          <table className="w-full text-left text-sm"><thead className="bg-[var(--paper)]"><tr><th>Name</th><th>Phone</th><th>Ward</th><th>Polling unit</th><th>Position</th></tr></thead>
-            <tbody>{o.members.map((m) => <tr key={m.id}><td><div className="flex items-center gap-3"><MemberPhoto id={m.id} src={m.photoUrl} />{m.name}</div></td><td>{m.phone}</td><td>{m.ward}</td><td>{m.pollingUnit}</td><td>{m.position}</td></tr>)}</tbody></table>
-        </div></section>
+      <section><h2 className="mb-2 font-semibold">Members ({o.members.length})</h2>
+        <table className="w-full border text-sm"><thead className="bg-gray-100 text-left"><tr><th className="p-2">Name</th><th>Phone</th><th>Ward</th><th>Polling unit</th><th>Position</th><th></th></tr></thead>
+          <tbody>{o.members.map((m) => <tr key={m.id} className="border-t"><td className="p-2"><div className="flex items-center gap-3"><MemberPhoto id={m.id} src={m.photoUrl} />{m.name}</div></td><td>{m.phone}</td><td>{m.ward}</td><td>{m.pollingUnit}</td><td>{m.position}</td><td>{me.role !== "LGA_COORDINATOR" && <ActionButton label="Remove" danger confirm="Remove this member?" run={removeMember.bind(null, m.id)} />}</td></tr>)}</tbody></table></section>
     </main>);
 }

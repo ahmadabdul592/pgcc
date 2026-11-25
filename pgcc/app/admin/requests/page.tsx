@@ -1,3 +1,4 @@
+import ChangeRequests from "./ChangeRequests";
 import { prisma } from "@/lib/prisma";
 import { requireRole } from "@/lib/auth";
 import ActionButton from "@/app/components/ActionButton";
@@ -32,5 +33,6 @@ export default async function Requests() {
             <div className="flex gap-2">
               <ActionButton label="Issue temporary password" run={issueResetPassword.bind(null, r.id)} />
               <ActionButton label="Dismiss" danger run={dismissReset.bind(null, r.id)} /></div></div>); })}</div></section>
+      <ChangeRequests />
     </main>);
 }

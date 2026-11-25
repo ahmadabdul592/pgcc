@@ -3,6 +3,7 @@ import Credentials from "next-auth/providers/credentials";
 import bcrypt from "bcryptjs";
 import { prisma } from "./prisma";
 import { normalizePhone } from "./duplicates";
+import { allow } from "./ratelimit";
 
 // Login with email (admins) or phone (org leaders) + password.
 export const { handlers, auth, signIn, signOut } = NextAuth({
@@ -14,11 +15,14 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
       async authorize(c) {
         const id = String(c?.identifier ?? "").trim();
         const pw = String(c?.password ?? "");
+        const rlKey = `login:${id.toLowerCase()}`;
+        if (!(await allow(rlKey, 8, 900))) return null; // 8 tries per 15 min
         const phone = normalizePhone(id);
         const user = await prisma.user.findFirst({
           where: { active: true, OR: [{ email: id.toLowerCase() }, ...(phone ? [{ phone }] : [])] },
         });
         if (!user || !(await bcrypt.compare(pw, user.passwordHash))) return null;
+        await prisma.rateLimit.deleteMany({ where: { key: rlKey } });
         return {
           id: user.id, name: user.name, role: user.role,
           organizationId: user.organizationId, lgaId: user.lgaId,
